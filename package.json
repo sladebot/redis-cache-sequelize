@@ -1,0 +1,38 @@
+{
+  "name": "redis-cache-sequelize",
+  "version": "1.0.0",
+  "description": "Helps in caching sequelize objects ",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sladebot/redis-cache-sequelize.git"
+  },
+  "keywords": [
+    "redis",
+    "cache",
+    "sequelize"
+  ],
+  "author": "Souranil Sen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sladebot/redis-cache-sequelize/issues"
+  },
+  "homepage": "https://github.com/sladebot/redis-cache-sequelize#readme",
+  "dependencies": {
+    "async": "^1.5.2",
+    "bluebird": "^3.1.1",
+    "gulp": "^3.9.0",
+    "lodash": "^3.10.1"
+  },
+  "devDependencies": {
+    "expect": "^1.13.4",
+    "pg": "^4.4.3",
+    "pg-hstore": "^2.3.2",
+    "redis": "^2.4.2",
+    "sequelize": "^3.17.1",
+    "should": "^8.1.1"
+  }
+}
