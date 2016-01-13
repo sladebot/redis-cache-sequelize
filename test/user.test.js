@@ -57,74 +57,136 @@ describe("Reading current user from cache or writing it to cache if not present"
       .catch(onErr);
   });
   
-  after(function(done) {
+  afterEach(function(done) {
     User.truncate({
       cascaded: true
     });
     done();
   });
   
-  
-  it("Should not hit cache when data not present with the cacheKey", function(done) {
-    var userCache = cacheStore(User)
-                      .ttl(100);
-    return userCache.searchOne({id: 1})
-      .then(function(res) {  
-        should.not.exist(res);        
-        return done();
-      })
-      .catch(function(err) {
-        return done(err);
-      });
+  describe("#searchOne", function() {
+    it("Should not hit cache when data not present with the cacheKey with searchOne", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.searchOne({id: 1})
+        .then(function(res) {  
+          should.not.exist(res);        
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
 
-  });
-  
-  it("Should write to cache when called with proper key", function(done) {
-    var userCache = cacheStore(User)
-                      .ttl(100);
-                      
-    return userCache.searchOne({id: 1, action: 'current'})
-      .then(function(res) {
-        return res;
-      })           
-      .then(function(res) {
-        if(res) {
+    });
+    
+    it("Should write to cache when called with proper key with searchOne", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+                        
+      return userCache.searchOne({id: 1, action: 'current'})
+        .then(function(res) {
           return res;
-          done();
-        } else {
-         return User.create({
-          name: 'Sample User'
-        }); 
-        }
-      })
-      .then(function(_user) {
-        should.exist(_user);
-        return _user;
-      })           
-      .then(function(_user) {
-        var cached = userCache.setCache(_user);
-        should.exist(cached);
-        done()
-      })
-      .catch(function(err) {
-        done(err);
-      })
-      
+        })           
+        .then(function(res) {
+          if(res) {
+            return res;
+            done();
+          } else {
+          return User.create({
+            name: 'SearchOneTestUser'
+          }); 
+          }
+        })
+        .then(function(_user) {
+          should.exist(_user);
+          return _user;
+        })           
+        .then(function(_user) {
+          var cached = userCache.setCache(_user);
+          should.exist(cached);
+          done()
+        })
+        .catch(function(err) {
+          done(err);
+        })
+        
+    });
+    
+    it("Should hit cache when data present with the cacheKey with searchOne", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.searchOne({id: 1, action: 'current'})
+        .then(function(res) {  
+          should.exist(res);        
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
   });
   
-  it("Should hit cache when data present with the cacheKey", function(done) {
-    var userCache = cacheStore(User)
-                      .ttl(100);
-    return userCache.searchOne({id: 1, action: 'current'})
-      .then(function(res) {  
-        should.exist(res);        
-        return done();
-      })
-      .catch(function(err) {
-        return done(err);
-      });
-
-  });
+  describe("#searchScoped", function() {
+    it("Should not hit cache when data is not present with searchScoped", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.searchScoped({action: 'active'})
+        .then(function(res) {
+          should.not.exist(res);        
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+    
+    it("should write to cache if key is not present and called with proper actions", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+                        
+      return userCache.searchScoped({action: 'all'})
+        .then(function(res) {
+          return res;
+        })           
+        .then(function(res) {
+          if(res) {
+            return res;
+            done();
+          } else {
+          return User.create({
+            name: 'ScopedTestUser'
+          }); 
+          }
+        })
+        .then(function(_user) {
+          should.exist(_user);
+          return _user;
+        })           
+        .then(function(_user) {
+          var cached = userCache.setCache(_user);
+          should.exist(cached);
+          done()
+        })
+        .catch(function(err) {
+          done(err);
+        })
+    });
+    
+    it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.searchScoped({action: 'all'})
+        .then(function(res) {  
+          should.exist(res);        
+          return done();
+        })  
+        .catch(function(err) {
+          return done(err);
+        });
+    })
+    
+  })
+  
   
   
   
