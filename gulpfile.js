@@ -6,10 +6,10 @@ var gulp = require('gulp'),
 gulp.task('test', function() {
   return gulp.src('./test/**/*.test.js', {read: false})
     .pipe(mocha())
-        .once('error', () => {
+        .once('error', function() {
             process.exit(1);
         })
-        .once('end', () => {
+        .once('end', function(){
             process.exit();
         });
     
