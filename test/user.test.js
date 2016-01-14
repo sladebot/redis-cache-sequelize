@@ -1,4 +1,4 @@
-var redis = require('redis');
+var redis = require('promise-redis')();
 var Sequelize = require('sequelize');
 var should = require('should');
 var expect = require('expect');
@@ -205,11 +205,7 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchPattern("*")
-        .then(function(res) {  
-          return res;
-        })
-        .then(function(_users) {
-          // console.log(JSON.stringify(_users));
+        .then(function(_users) {  
           should.exist(_users);
           done();
         })
