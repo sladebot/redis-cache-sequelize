@@ -1,4 +1,5 @@
-var redis = require('promise-redis')();
+Promise = require('bluebird')
+var redis = Promise.promisifyAll(require("redis"));
 var Sequelize = require('sequelize');
 var should = require('should');
 var expect = require('expect');

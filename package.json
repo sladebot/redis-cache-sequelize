@@ -25,8 +25,7 @@
     "async": "^1.5.2",
     "bluebird": "^3.1.1",
     "gulp": "^3.9.0",
-    "lodash": "^3.10.1",
-    "promise-redis": "0.0.5"
+    "lodash": "^3.10.1"
   },
   "devDependencies": {
     "expect": "^1.13.4",
