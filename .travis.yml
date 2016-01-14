@@ -9,9 +9,17 @@ cache:
   directories:
     - node_modules
 
-# before_script:
-#   - npm -q install
-#   - npm -q install -g gulp
-#
-# script:
-#   - gulp test
+before_script:
+  - psql -c 'redis_cache_sequelize_test;' -U postgres
+
+env:
+  - DB_PASS=postgres
+  - DIALECT=postgres
+  
+  
+addons:
+  postgresql: '9.4'
+  
+services:
+  - redis-server
+  - postgresql
