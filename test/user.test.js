@@ -1,5 +1,7 @@
-Promise = require('bluebird')
+Promise = require('bluebird');
 var redis = Promise.promisifyAll(require("redis"));
+Promise.promisifyAll(redis.RedisClient.prototype);
+Promise.promisifyAll(redis.Multi.prototype);
 var Sequelize = require('sequelize');
 var should = require('should');
 var expect = require('expect');
@@ -35,9 +37,9 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   // Create a user
   before(function(done) {
-    redis = redis.createClient(redisPort, redisHost);
+    var redisClient = redis.createClient(redisPort, redisHost);
     db = new Sequelize(opts.database, opts.username, opts.password, opts);
-    cacheStore = initCacheStore(redis, {cacheKey: 'DARTH'});
+    cacheStore = initCacheStore(redisClient, {cacheKey: 'DARTH'});
     
     User = db.define('User', {
       id: {
@@ -214,11 +216,36 @@ describe("Reading current user from cache or writing it to cache if not present"
           return done(err);
         });
     });
-    
-    
   });
   
   
+  describe("#expireOne", function() {
+    it("Should expire one particular key", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.expireOne("DARTH::::User::1.current")
+        .then(function(deleted) {  
+          deleted.should.be.eql(1)
+          done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+    
+    it("Should not expire anything if key doesn't match", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+      return userCache.expireOne("DARTH::SampleWrongKey")
+        .then(function(deleted) {  
+          deleted.should.be.eql(0)
+          done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+  })
   
   
   
