@@ -224,8 +224,8 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.expireOne("DARTH::::User::1.current")
-        .then(function(deleted) {  
-          deleted.should.be.eql(1)
+        .then(function(_status) {  
+          _status.should.be.true
           done();
         })
         .catch(function(err) {
@@ -237,14 +237,31 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.expireOne("DARTH::SampleWrongKey")
-        .then(function(deleted) {  
-          deleted.should.be.eql(0)
+        .then(function(_status) {  
+          _status.should.be.false
           done();
         })
         .catch(function(err) {
           return done(err);
         });
     });
+  });
+  
+  describe("#expirePattern", function() {
+    it("Should expire all keys matching the pattern", function(done) {
+      var userCache = cacheStore(User)
+                        .ttl(100);
+             
+      return userCache.expirePattern("DARTH*")
+        .then(function(_status) {
+          _status.should.be.an.Array;
+          _status.should.containEql(1);     
+          done()
+        })
+        .catch(function(err) {
+          done(err);
+        })
+    })
   })
   
   
