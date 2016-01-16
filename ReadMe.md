@@ -52,11 +52,11 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 * This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
 
-Global Namespace : DARTH
-Model: User
-id: 1
+Global Namespace : ```javascript DARTH ```
+Model: ```javascript User ```
+id: ```javascript 1 ```
 
-The key will be formed as DARTH::User::1
+The key will be formed as ```javascript DARTH::User::1 ```
 
 ** Usage
 
@@ -71,11 +71,11 @@ userCache.searchOne({id: 1})
 
 * This basically searches based on actions / methods or however you set the keys. It's agostic of that at the moment intentionally.
 
-Global Namespace:    DARTH
-Model:               User
-Scope/Method/Action: ALL
+Global Namespace:    ```javascript DARTH ```
+Model:               ```javascript User ```
+Scope/Method/Action: ```javascript ALL ```
 
-The key will be formed as DARTH::USER::ALL
+The key will be formed as ```javascript DARTH::USER::ALL ```
 
 ** Usage
 
@@ -90,11 +90,11 @@ userCache.searchScoped({action: 'ALL'})
 
 * Now this searches all keys based on the pattern provided
 
-Global Namespace:    DARTH
-Model:               User
-Pattern:             "*"
+Global Namespace:    ```javascript DARTH ```
+Model:               ```javascript User ```
+Pattern:             ```javascript "*" ```
 
-The key will be formed as DARTH::USER::*
+The key will be formed as ```javascript DARTH::USER::* ```
 
 ** Usage
 
