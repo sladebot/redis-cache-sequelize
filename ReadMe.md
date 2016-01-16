@@ -3,7 +3,50 @@
 
 ### This helps in caching sequelize objects in redis based on 3 strategies and not queries
 
-# searchOne
+
+#### Initialization and configuration
+
+**** We are using sequelize models for using this as of now.
+
+```javascript
+	
+	var redisClient = redis.createClient(redisPort, redisHost);
+    db = new Sequelize(opts.database, opts.username, opts.password, opts);
+    cacheStore = initCacheStore(redisClient);
+    
+    User = db.define('User', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      }, 
+      name: {
+        type: Sequelize.STRING(255)
+      }
+    }, {
+      instanceMethods: {
+        toApi: function() {
+          return {
+            name: this.name
+          }
+        }
+      }
+    });
+    
+    User.sync({force: true})
+      .then(function() {
+        return done();
+      })
+      .catch(onErr);
+
+
+	var userCache = cacheStore(User, {cachePrefix: 'DARTH'})
+                .ttl(100);
+
+```
+
+##### searchOne
 
 * This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
 
@@ -22,7 +65,7 @@ userCache.searchOne({id: 1})
     })
 ```
 
-# searchScoped
+##### searchScoped
 
 * This basically searches based on actions / methods or however you set the keys. It's agostic of that at the moment intentionally.
 
@@ -41,7 +84,7 @@ userCache.searchScoped({action: 'ALL'})
     })
 ```
 
-# searchPattern
+##### searchPattern
 
 * Now this searches all keys based on the pattern provided
 
