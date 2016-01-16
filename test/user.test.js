@@ -86,7 +86,7 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User)
                         .ttl(100);
                         
-      return userCache.searchOne({id: 1, action: 'current'})
+      return userCache.searchOne({id: 1})
         .then(function(res) {
           return res;
         })           
@@ -118,7 +118,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should hit cache when data present with the cacheKey with searchOne", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchOne({id: 1, action: 'current'})
+      return userCache.searchOne({id: 1})
         .then(function(res) {  
           should.exist(res);        
           return done();
@@ -223,7 +223,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should expire one particular key", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.expireOne("DARTH::::User::1.current")
+      return userCache.expireOne({id: 1})
         .then(function(_status) {  
           _status.should.be.true
           done();
@@ -236,7 +236,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should not expire anything if key doesn't match", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.expireOne("DARTH::SampleWrongKey")
+      return userCache.expireOne({id: 'SampleWrongKey'})
         .then(function(_status) {  
           _status.should.be.false
           done();
@@ -252,7 +252,7 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User)
                         .ttl(100);
              
-      return userCache.expirePattern("DARTH*")
+      return userCache.expirePattern({pattern: "*"})
         .then(function(_status) {
           _status.should.be.an.Array;
           _status.should.containEql(1);     
