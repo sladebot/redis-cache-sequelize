@@ -194,7 +194,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("should not hit cache if it cannot find a pattern", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchPattern("1232all*")
+      return userCache.searchPattern({pattern: "1232all*"})
         .then(function(res) {  
           res.length.should.equal(0);        
           return done();
@@ -207,7 +207,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchPattern("*")
+      return userCache.searchPattern({pattern: "*"})
         .then(function(_users) {  
           should.exist(_users);
           done();
