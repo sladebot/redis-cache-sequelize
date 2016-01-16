@@ -6,7 +6,7 @@
 
 #### Initialization and configuration
 
-**** We are using sequelize models for using this as of now.
+** We are using sequelize models for using this as of now.
 
 ```javascript
 	
