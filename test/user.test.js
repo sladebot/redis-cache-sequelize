@@ -51,6 +51,14 @@ describe("Reading current user from cache or writing it to cache if not present"
       name: {
         type: Sequelize.STRING(255)
       }
+    }, {
+      instanceMethods: {
+        toApi: function() {
+          return {
+            name: this.name
+          }
+        }
+      }
     });
     
     User.sync({force: true})
@@ -112,7 +120,7 @@ describe("Reading current user from cache or writing it to cache if not present"
           return _user;
         })           
         .then(function(_user) {
-          var cached = userCache.setCache(_user);
+          var cached = userCache.setCache(_user, {id: _user.id});
           should.exist(cached);
           done()
         })
@@ -150,6 +158,7 @@ describe("Reading current user from cache or writing it to cache if not present"
         });
     });
     
+    // TODO: Wrong test context. This npm doesn't set or expire caches automatically !
     it("should write to cache if key is not present and called with proper actions", function(done) {
       var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
                         .ttl(100);
@@ -163,17 +172,17 @@ describe("Reading current user from cache or writing it to cache if not present"
             return res;
             done();
           } else {
-          return User.create({
-            name: 'ScopedTestUser'
-          }); 
+            return User.create({
+              name: 'ScopedTestUser'
+            }); 
           }
         })
         .then(function(_user) {
           should.exist(_user);
-          return _user;
+          return [_user.toApi()];
         })           
-        .then(function(_user) {
-          var cached = userCache.setCache(_user);
+        .then(function(_users) {
+          var cached = userCache.setCache(_users, { action: 'all' });
           should.exist(cached);
           done()
         })
