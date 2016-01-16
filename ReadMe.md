@@ -3,8 +3,65 @@
 
 ### This helps in caching sequelize objects in redis based on 3 strategies and not queries
 
-* modelCache.searchOne({id: 1, action: 'method'}) => This searches the cache that model's cache with that id, and / or the action if specified. 
-  This doesnot automatically set the cache ! ( not just yet ). This return's bluebird promises to support promise chains.
+# searchOne
+
+* This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
+
+Global Namespace : DARTH
+Model: User
+id: 1
+
+The key will be formed as DARTH::User::1
+
+** Usage
+
+```javascript
+userCache.searchOne({id: 1})
+    .then(function(result) {  
+      /** */
+    })
+```
+
+# searchScoped
+
+* This basically searches based on actions / methods or however you set the keys. It's agostic of that at the moment intentionally.
+
+Global Namespace:    DARTH
+Model:               User
+Scope/Method/Action: ALL
+
+The key will be formed as DARTH::USER::ALL
+
+** Usage
+
+```javascript
+userCache.searchScoped({action: 'ALL'})
+    .then(function(result) {  
+      /** */
+    })
+```
+
+# searchPattern
+
+* Now this searches all keys based on the pattern provided
+
+Global Namespace:    DARTH
+Model:               User
+Pattern:             "*"
+
+The key will be formed as DARTH::USER::*
+
+** Usage
+
+```javascript
+userCache.searchPattern({action: '*'})
+    .then(function(result) {  
+      /** */
+    })
+```
+
+### Expiry has a similar setup. 
+Docs coming soon ...
 
 
 ## Check tests for more details. 

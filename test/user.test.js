@@ -68,19 +68,19 @@ describe("Reading current user from cache or writing it to cache if not present"
       .catch(onErr);
   });
   
-  // after(function(done) {
-  //   User.truncate({
-  //     cascaded: true
-  //   });
-  //   var userCache = cacheStore(User, {cachePrefix: 'XYZ'}).ttl(100);
-  //   return userCache.expirePattern({pattern: "*"})
-  //     .then(function(_status) {
-  //       done()
-  //     })
-  //     .catch(function(err) {
-  //       done(err);
-  //     })
-  // });
+  after(function(done) {
+    User.truncate({
+      cascaded: true
+    });
+    var userCache = cacheStore(User, {cachePrefix: 'XYZ'}).ttl(100);
+    return userCache.expirePattern({pattern: "*"})
+      .then(function(_status) {
+        done()
+      })
+      .catch(function(err) {
+        done(err);
+      })
+  });
   
   describe("#searchOne", function() {
     it("Should not hit cache when data not present with the cacheKey with searchOne", function(done) {
