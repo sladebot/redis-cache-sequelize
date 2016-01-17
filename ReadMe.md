@@ -116,7 +116,7 @@ userCache.searchPattern({action: '*'})
     })
 ```
 
-#### Searching in Cache
+#### Cache Expiry
 
 ##### expireOne
 
