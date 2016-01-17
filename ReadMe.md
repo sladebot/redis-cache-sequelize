@@ -57,6 +57,8 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 ```
 
+#### Searching in Cache
+
 ##### searchOne
 
 This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
@@ -114,9 +116,27 @@ userCache.searchPattern({action: '*'})
     })
 ```
 
-##### Expiry has a similar setup. 
+#### Searching in Cache
 
-Docs coming soon ...
+##### expireOne
 
+This expires a particular value based on the key generated from what you pass in options.
+
+Global Namespace : ```javascript VADER ```
+Model: ```javascript User ```
+id: ```javascript 1 ```
+
+The key will be formed as ```javascript VADER::User::1 ```
+
+- Usage
+
+```javascript
+userCache.expireOne({id: 1})
+    .then(function(result) {  
+      /** */
+    })
+```
+
+##### More coming soon ...
 
 ##### Check tests for more details. 
