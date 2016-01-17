@@ -59,7 +59,7 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 ##### searchOne
 
-* This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
+This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
 
 Global Namespace : ```javascript VADER ```
 Model: ```javascript User ```
@@ -67,7 +67,7 @@ id: ```javascript 1 ```
 
 The key will be formed as ```javascript VADER::User::1 ```
 
-** Usage
+- Usage
 
 ```javascript
 userCache.searchOne({id: 1})
@@ -78,7 +78,7 @@ userCache.searchOne({id: 1})
 
 ##### searchScoped
 
-* This basically searches based on actions / methods or however you set the keys. It's agostic of that at the moment intentionally.
+This basically searches based on actions / methods or however you set the keys. It's agostic of that at the moment intentionally.
 
 Global Namespace:    ```javascript VADER ```
 Model:               ```javascript User ```
@@ -86,7 +86,7 @@ Scope/Method/Action: ```javascript ALL ```
 
 The key will be formed as ```javascript VADER::USER::ALL ```
 
-** Usage
+- Usage
 
 ```javascript
 userCache.searchScoped({action: 'ALL'})
@@ -97,7 +97,7 @@ userCache.searchScoped({action: 'ALL'})
 
 ##### searchPattern
 
-* Now this searches all keys based on the pattern provided
+This searches all keys based on the pattern provided
 
 Global Namespace:    ```javascript VADER ```
 Model:               ```javascript User ```
@@ -105,7 +105,7 @@ Pattern:             ```javascript "*" ```
 
 The key will be formed as ```javascript VADER::USER::* ```
 
-** Usage
+- Usage
 
 ```javascript
 userCache.searchPattern({action: '*'})
@@ -114,8 +114,9 @@ userCache.searchPattern({action: '*'})
     })
 ```
 
-### Expiry has a similar setup. 
+##### Expiry has a similar setup. 
+
 Docs coming soon ...
 
 
-## Check tests for more details. 
+##### Check tests for more details. 
