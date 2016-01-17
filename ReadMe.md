@@ -8,13 +8,22 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 #### Initialization and configuration
 
+- It is basically namespaced globally and you can do that by providing options.namespace while initializing the cacheStore :
+
+```javascript
+
+  var initCacheStore = require("redis-cache-sequelize");
+  var cacheStore = initCacheStore(redisClient, {namespace: 'VADER'});
+
+```
+
 - We are using sequelize models for using this as of now.
 
 ```javascript
 	
 	var redisClient = redis.createClient(redisPort, redisHost);
     db = new Sequelize(opts.database, opts.username, opts.password, opts);
-    cacheStore = initCacheStore(redisClient);
+    cacheStore = initCacheStore(redisClient, {namespace: 'VADER'});
     
     User = db.define('User', {
       id: {
@@ -43,7 +52,7 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
       .catch(onErr);
 
 
-	var userCache = cacheStore(User, {cachePrefix: 'DARTH'})
+	var userCache = cacheStore(User)
                 .ttl(100);
 
 ```
