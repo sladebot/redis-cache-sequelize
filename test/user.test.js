@@ -39,7 +39,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   before(function(done) {
     var redisClient = redis.createClient(redisPort, redisHost);
     db = new Sequelize(opts.database, opts.username, opts.password, opts);
-    cacheStore = initCacheStore(redisClient);
+    cacheStore = initCacheStore(redisClient, {namespace: 'XYZ'});
     
     User = db.define('User', {
       id: {
@@ -72,7 +72,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     User.truncate({
       cascaded: true
     });
-    var userCache = cacheStore(User, {cachePrefix: 'XYZ'}).ttl(100);
+    var userCache = cacheStore(User).ttl(100);
     return userCache.expirePattern({pattern: "*"})
       .then(function(_status) {
         done()
@@ -84,7 +84,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   describe("#searchOne", function() {
     it("Should not hit cache when data not present with the cacheKey with searchOne", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchOne({id: 1})
         .then(function(res) {  
@@ -98,7 +98,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
     
     it("Should write to cache when called with proper key with searchOne", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
                         
       return userCache.searchOne({id: 1})
@@ -131,7 +131,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
     
     it("Should hit cache when data present with the cacheKey with searchOne", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchOne({id: 1})
         .then(function(res) {  
@@ -146,7 +146,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   describe("#searchScoped", function() {
     it("Should not hit cache when data is not present with searchScoped", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchScoped({action: 'active'})
         .then(function(res) {
@@ -160,7 +160,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     
     // TODO: Wrong test context. This npm doesn't set or expire caches automatically !
     it("should write to cache if key is not present and called with proper actions", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
                         
       return userCache.searchScoped({action: 'all'})
@@ -192,7 +192,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
     
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchScoped({action: 'all'})
         .then(function(res) {  
@@ -208,7 +208,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   describe("#searchPattern", function() {
     it("should not hit cache if it cannot find a pattern", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchPattern({pattern: "1232all*"})
         .then(function(res) {  
@@ -221,7 +221,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
     
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.searchPattern({pattern: "*"})
         .then(function(_users) {  
@@ -237,7 +237,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   describe("#expireOne", function() {
     it("Should expire one particular key", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.expireOne({id: 1})
         .then(function(_status) {  
@@ -250,7 +250,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
     
     it("Should not expire anything if key doesn't match", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
       return userCache.expireOne({id: 'SampleWrongKey'})
         .then(function(_status) {  
@@ -265,7 +265,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   describe("#expirePattern", function() {
     it("Should expire all keys matching the pattern", function(done) {
-      var userCache = cacheStore(User, {cachePrefix: 'XYZ'})
+      var userCache = cacheStore(User)
                         .ttl(100);
              
       return userCache.expirePattern({pattern: "all*"})
