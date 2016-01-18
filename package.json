@@ -1,6 +1,6 @@
 {
   "name": "redis-cache-sequelize",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Helps in caching sequelize objects ",
   "main": "lib/index.js",
   "scripts": {
@@ -28,8 +28,10 @@
     "lodash": "^3.10.1"
   },
   "devDependencies": {
+    "chai": "^3.4.1",
     "expect": "^1.13.4",
     "gulp-mocha": "^2.2.0",
+    "mocha": "^2.3.4",
     "pg": "^4.4.3",
     "pg-hstore": "^2.3.2",
     "redis": "^2.4.2",
