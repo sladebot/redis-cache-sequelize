@@ -85,13 +85,14 @@ This basically searches based on actions / methods or however you set the keys. 
 Global Namespace:    ```javascript VADER ```
 Model:               ```javascript User ```
 Scope/Method/Action: ```javascript ALL ```
+id:                  ```javascript 1 ```
 
-The key will be formed as ```javascript VADER::USER::ALL ```
+The key will be formed as ```javascript VADER::USER::1::ALL ```
 
 - Usage
 
 ```javascript
-userCache.searchScoped({action: 'ALL'})
+userCache.searchScoped({action: 'ALL', id: 1})
     .then(function(result) {  
       /** */
     })
@@ -103,14 +104,15 @@ This searches all keys based on the pattern provided
 
 Global Namespace:    ```javascript VADER ```
 Model:               ```javascript User ```
+id:                  ```javascript 1 ```
 Pattern:             ```javascript "*" ```
 
-The key will be formed as ```javascript VADER::USER::* ```
+The key will be formed as ```javascript VADER::USER::1::* ```
 
 - Usage
 
 ```javascript
-userCache.searchPattern({action: '*'})
+userCache.searchPattern({action: '*', id: 1})
     .then(function(result) {  
       /** */
     })
