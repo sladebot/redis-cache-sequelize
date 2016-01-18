@@ -1,6 +1,6 @@
 {
   "name": "redis-cache-sequelize",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "Helps in caching sequelize objects ",
   "main": "lib/index.js",
   "scripts": {

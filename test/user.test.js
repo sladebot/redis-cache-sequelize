@@ -73,7 +73,7 @@ describe("Reading current user from cache or writing it to cache if not present"
       cascaded: true
     });
     var userCache = cacheStore(User).ttl(100);
-    return userCache.expirePattern({pattern: "*"})
+    return userCache.expirePattern({pattern: "*", id: 1})
       .then(function(_status) {
         done()
       })
@@ -148,7 +148,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should not hit cache when data is not present with searchScoped", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchScoped({action: 'active'})
+      return userCache.searchScoped({action: 'active', id: 1})
         .then(function(res) {
           should.not.exist(res);        
           return done();
@@ -158,12 +158,12 @@ describe("Reading current user from cache or writing it to cache if not present"
         });
     });
     
-    // TODO: Wrong test context. This npm doesn't set or expire caches automatically !
+    //TODO: Wrong test context. This npm doesn't set or expire caches automatically !
     it("should write to cache if key is not present and called with proper actions", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
                         
-      return userCache.searchScoped({action: 'all'})
+      return userCache.searchScoped({action: 'all', id: 1})
         .then(function(res) {
           return res;
         })           
@@ -182,7 +182,7 @@ describe("Reading current user from cache or writing it to cache if not present"
           return [_user.toApi()];
         })           
         .then(function(_users) {
-          var cached = userCache.setCache(_users, { action: 'all' });
+          var cached = userCache.setCache(_users, { action: 'all', id: 1 });
           should.exist(cached);
           done()
         })
@@ -194,7 +194,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchScoped({action: 'all'})
+      return userCache.searchScoped({action: 'all', id: 1})
         .then(function(res) {  
           should.exist(res);        
           return done();
@@ -210,7 +210,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("should not hit cache if it cannot find a pattern", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchPattern({pattern: "1232all*"})
+      return userCache.searchPattern({pattern: "1232all*", id: 1})
         .then(function(res) {  
           res.length.should.equal(0);        
           return done();
@@ -223,7 +223,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.searchPattern({pattern: "*"})
+      return userCache.searchPattern({pattern: "*", id: 1})
         .then(function(_users) {  
           should.exist(_users);
           done();
@@ -252,7 +252,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should not expire anything if key doesn't match", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-      return userCache.expireOne({id: 'SampleWrongKey'})
+      return userCache.expireOne({id: 'SampleWrongKey', id: 1})
         .then(function(_status) {  
           _status.should.be.false
           done();
@@ -267,8 +267,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     it("Should expire all keys matching the pattern", function(done) {
       var userCache = cacheStore(User)
                         .ttl(100);
-             
-      return userCache.expirePattern({pattern: "all*"})
+      return userCache.expirePattern({pattern: "all*", id: 1})
         .then(function(_status) {
           _status.should.be.an.Array;
           _status.should.containEql(1);     
