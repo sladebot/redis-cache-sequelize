@@ -20,18 +20,18 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 - We are using sequelize models for using this as of now.
 
 ```javascript
-	
+
 	var redisClient = redis.createClient(redisPort, redisHost);
     db = new Sequelize(opts.database, opts.username, opts.password, opts);
     cacheStore = initCacheStore(redisClient, {namespace: 'VADER'});
-    
+
     User = db.define('User', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
-      }, 
+      },
       name: {
         type: Sequelize.STRING(255)
       }
@@ -44,7 +44,7 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
         }
       }
     });
-    
+
     User.sync({force: true})
       .then(function() {
         return done();
@@ -61,7 +61,7 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 ##### searchOne
 
-This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example : 
+This basically searches based on the id of the object, a global namespace is present which is set while initializing the cache and apart from that the model name is used as the secondary namespace. For example :
 
 Global Namespace : ```javascript VADER ```
 Model: ```javascript User ```
@@ -87,7 +87,7 @@ Model:               ```javascript User ```
 Scope/Method/Action: ```javascript ALL ```
 id:                  ```javascript 1 ```
 
-The key will be formed as ```javascript VADER::USER::1::ALL ```
+The key will be formed as ```javascript VADER::USER::ALL::1 ```
 
 - Usage
 
@@ -139,6 +139,47 @@ userCache.expireOne({id: 1})
     })
 ```
 
+
+#### setCache
+
+You can set cache which always needs an id and / or with action. Pattern is
+restricted while setting cache for obvious reasons.
+
+Global Namespace : ```javascript VADER ```
+Model: ```javascript User ```
+id: ```javascript 1 ```
+
+The key will be formed as ```javascript VADER::User::1 ```
+
+- Usage
+
+```javascript
+userCache.setCache(_datam, {id: 1})
+    .then(function() {  
+      /** success */
+    })
+```
+
+
+Global Namespace:    ```javascript VADER ```
+Model:               ```javascript User ```
+id:                  ```javascript 1 ```
+Pattern:             ```javascript "all" ```
+
+The key will be formed as ```javascript VADER::USER::ALL::1 ```
+
+- Usage
+
+```javascript
+userCache.setCache(_data, {action: 'all', id: 1})
+    .then(function() {  
+      /** success */
+    })
+```
+
+
+
+
 ##### More coming soon ...
 
-##### Check tests for more details. 
+##### Check tests for more details.
