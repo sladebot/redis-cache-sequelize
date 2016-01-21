@@ -142,6 +142,8 @@ userCache.expireOne({id: 1})
 
 #### setCache
 
+
+#### setCache with id only
 You can set cache which always needs an id and / or with action. Pattern is
 restricted while setting cache for obvious reasons.
 
@@ -161,6 +163,7 @@ userCache.setCache(_datam, {id: 1})
 ```
 
 
+#### setCache with id and action
 Global Namespace:    ```javascript VADER ```
 Model:               ```javascript User ```
 id:                  ```javascript 1 ```
