@@ -70,7 +70,7 @@ describe("Reading current user from cache or writing it to cache if not present"
   
   after(function(done) {
     User.truncate({
-      cascaded: true
+      cascade: true
     });
     var userCache = cacheStore(User, {ttl: 50000});
     return userCache.expirePattern({pattern: "*", id: 1})
@@ -87,7 +87,7 @@ describe("Reading current user from cache or writing it to cache if not present"
       var userCache = cacheStore(User, {ttl: 300});
       return userCache.searchOne({id: 1})
         .then(function(res) {  
-          should.not.exist(res);        
+          should.not.exist(res);
           return done();
         })
         .catch(function(err) {
