@@ -241,7 +241,7 @@ describe("Reading current user from cache or writing it to cache if not present"
     
     it("Should not expire anything if key doesn't match", function(done) {
       var userCache = cacheStore(User, {ttl: 300})
-      return userCache.expireOne({id: 'SampleWrongKey', id: 1})
+      return userCache.expireOne({id: 'SomethingRandomAndWeird'})
         .then(function(_status) {  
           _status.should.be.false
           done();
