@@ -23,7 +23,7 @@ This helps in caching sequelize objects in redis based on 3 strategies and not q
 
 ```javascript
 
-	var redisClient = redis.createClient(redisPort, redisHost);
+    var redisClient = redis.createClient(redisPort, redisHost);
     db = new Sequelize(opts.database, opts.username, opts.password, opts);
     cacheStore = initCacheStore(redisClient, {namespace: 'VADER'});
 
