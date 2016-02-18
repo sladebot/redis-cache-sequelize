@@ -11,29 +11,19 @@ var redisPort = process.env.REDIS_PORT || 6379;
 var redisHost = process.env.REDIS_HOST;
 var opts = {};
 
+var db;
+var cacheStore;
+
+
 opts.database = process.env.DB_NAME || 'redis_cache_sequelize_test';
 opts.username = process.env.DB_USER || 'postgres';
 opts.password = process.env.DB_PASS;
 opts.dialect = process.env.DB_DIALECT || 'postgres';
 opts.logging = process.env.DB_LOG ? console.log : false;
 
-
-
-/*global describe*/
-/*global it*/
-/*global before*/
-/*global after*/
-
-function onErr(err) {
-  throw err;
-}
-
-
-describe("Reading current user from cache or writing it to cache if not present", function() {
-  var db;
+describe("Caching", function() {
   var User;
-  var instance;
-  var cacheStore;
+  var currentUser;
   
   // Create a user
   before(function(done) {
@@ -63,67 +53,226 @@ describe("Reading current user from cache or writing it to cache if not present"
     
     User.sync({force: true})
       .then(function() {
+        return createTestUser();
+      })
+      .catch(function(_err) {
+        return done(_err);
+      });
+      
+    function createTestUser() {
+     return User.create({
+        name: 'TestUser'
+      })
+      .then(function(_user) {
+        currentUser = _user;
         return done();
       })
-      .catch(onErr);
+      .catch(function(_err) {
+        return done(_err);
+      }) 
+    }
   });
   
+  
+  /**
+   * Destroys all users and expires all caches
+   */
   after(function(done) {
-    User.truncate({
-      cascade: true
+    var userCache = cacheStore(db.models.User, {ttl: 50000});
+    
+    function expireAllCache() {
+      return new Promise(function promisify(resolve, reject) {
+        return userCache.expire({expire_all: true})
+          .then(function(_status) {
+            resolve(_status);
+          })
+          .catch(function(_err) {
+            reject(_err);
+          })
+      })
+    }
+    
+    db.models.User.destroy({
+      paranoid: false,
+      force: true,
+      reset: true,
+      where: {}
+    })
+    .then(function(_result) {
+      return expireAllCache();
+    })
+    .then(function(_status) {
+      return done();
+    })
+    .catch(function(err) {
+      return done(err);
     });
-    var userCache = cacheStore(User, {ttl: 50000});
-    return userCache.expirePattern({pattern: "*", id: 1})
-      .then(function(_status) {
-        done()
-      })
-      .catch(function(err) {
-        done(err);
-      })
   });
   
-  describe("#searchOne", function() {
-    it("Should not hit cache when data not present with the cacheKey with searchOne", function(done) {
-      var userCache = cacheStore(User, {ttl: 300});
-      return userCache.searchOne({id: 1})
-        .then(function(res) {  
-          should.not.exist(res);
+  
+  describe("#setCache", function() {
+
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return done()
+    });
+    
+    after(function(done) {
+      userCache.expire({expire_all: true})
+          .then(function(_status) {
+            done();
+          })
+          .catch(function(_err) {
+            done(_err);
+          });
+    })
+    
+    it("Should not exist in cache initially", function(done) {
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.search({id: _user.id})
+        })
+        .then(function(_cachedUser) {
+          should(_cachedUser).be.null;
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        })
+    })
+
+    it("Should be able to set cache with just id ", function(done) {
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: _user.id}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.search({id: _user.id});
+        })
+        .then(function(_cachedUser) {
+          _cachedUser.should.exist;
+          _cachedUser.id.should.exist;
+          _cachedUser.name.should.exist;
+          _cachedUser.name.should.equal("TestUser");
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    })
+    
+    it("Should be able to set cache with id and action", function(done) {
+       return User.findAll({})
+        .then(function(_users) {
+          return userCache.setCache([_users], {id: currentUser.id, action: 'all'});
+        })
+        .then(function(_data) {
+          return userCache.search({id: currentUser.id, action: 'all'});
+        })
+        .then(function(_cachedUsers) {
+          _cachedUsers.should.exist;
+          _cachedUsers.should.be.instanceof(Array);
+          return done()
+        })
+        .catch(function(_err) {
+          return done(_err);
+        })
+    });
+    
+    it("Should not set cache if there is no id", function(done) {
+       return User.findAll({})
+        .then(function(_users) {
+          userCache.setCache.should.throw(Error, {message: "Please provide id"});
+          return done()
+        })
+        .catch(function(_err) {
+          return done(_err);
+        })
+    });
+  });
+  
+  describe("#search with cached data", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: currentUser.id}).return(_user);
+        })
+        .then(function(_user) {
+          userCache.setCache([_user], {id: currentUser.id, action: 'all'});
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    });
+    
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
+          done();
+        })
+        .catch(function(_err) {
+          done(_err);
+        });
+    });
+    
+    it("Should fetch currentUser when searched only with id - {id: id}", function(done) {
+      return userCache.search({id: currentUser.id})
+        .then(function(_cachedUser) {
+          _cachedUser.should.exist;
           return done();
         })
         .catch(function(err) {
           return done(err);
         });
-
     });
     
-    it("Should write to cache when called with proper key with searchOne", function(done) {
-      var userCache = cacheStore(User, {ttl: 800});
-                        
-      return userCache.searchOne({id: 1})
-        .then(function(res) {
-          return res;
-        })           
-        .then(function(res) {
-          if(res) {
-            return res;
-            done();
-          } else {
-          return User.create({
-            name: 'SearchOneTestUser'
-          }); 
-          }
-        })
-        .then(function(_user) {
-          should.exist(_user);
-          return _user;
-        })           
-        .then(function(_user) {
-          var cached = userCache.setCache(_user, {id: _user.id});
-          should.exist(cached);
-          done()
+    it("Should fetch currentUser when searched only with id and action - {id: id, action: 'action'}", function(done) {
+      return userCache.search({id: currentUser.id, action: 'all'})
+        .then(function(_cachedUsers) {
+          _cachedUsers.should.exist;
+          _cachedUsers.should.be.instanceof(Array);
+          return done();
         })
         .catch(function(err) {
-          done(err);
+          return done(err);
+        });
+    });
+    
+    it("Should fetch all cached users for a particular user", function(done) {
+      return userCache.search({id: currentUser.id, all: true})
+        .then(function(_cachedUsers) {
+          _cachedUsers.should.exist;
+          _cachedUsers.should.be.instanceof(Array);
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        })
+    });
+  });
+  
+  describe("Legacy - #searchOne", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          userCache.setCache(_user, {id: currentUser.id}).return(_user);
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    });
+    
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
+          done();
+        })
+        .catch(function(_err) {
+          done(_err);
         });
     });
     
@@ -140,75 +289,72 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
   });
   
-  describe("#searchScoped", function() {
-    it("Should not hit cache when data is not present with searchScoped", function(done) {
-      var userCache = cacheStore(User, {ttl: 300});
-      return userCache.searchScoped({action: 'active', id: 1})
-        .then(function(res) {
-          should.not.exist(res);        
+  
+  describe("Legacy - #searchScoped", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: currentUser.id}).return(_user);
+        })
+        .then(function(_user) {
+          userCache.setCache([_user], {id: currentUser.id, action: 'all'});
           return done();
         })
-        .catch(function(err) {
-          return done(err);
+        .catch(function(_err) {
+          return done(_err);
         });
     });
     
-    //TODO: Wrong test context. This npm doesn't set or expire caches automatically !
-    it("should write to cache if key is not present and called with proper actions", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
-                        
-      return userCache.searchScoped({action: 'all', id: 1})
-        .then(function(res) {
-          return res;
-        })           
-        .then(function(res) {
-          if(res) {
-            return res;
-            done();
-          } else {
-            return User.create({
-              name: 'ScopedTestUser'
-            }); 
-          }
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
+          done();
         })
+        .catch(function(_err) {
+          done(_err);
+        });
+    });
+    
+    it("should write to cache if key is not present and called with proper actions", function(done) {
+      var userCache = cacheStore(User, {ttl: 300})         
+      return userCache.searchScoped({action: 'all', id: 1})
         .then(function(_user) {
           should.exist(_user);
-          return [_user.toApi()];
-        })           
-        .then(function(_users) {
-          var cached = userCache.setCache(_users, { action: 'all', id: 1 });
-          should.exist(cached);
-          done()
+          return done();
         })
         .catch(function(err) {
           done(err);
         })
     });
-    
-    it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
-      return userCache.searchScoped({action: 'all', id: 1})
-        .then(function(res) {  
-          should.exist(res);        
+  });
+  
+  describe("Legacy - #searchPattern", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: currentUser.id}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: currentUser.id, action: 'all'}).return(_user);
+        })
+        .then(function(_user) {
+          userCache.setCache([_user], {id: currentUser.id, action: 'connections'});
           return done();
-        })  
-        .catch(function(err) {
-          return done(err);
+        })
+        .catch(function(_err) {
+          return done(_err);
         });
     });
     
-  });
-  
-  describe("#searchPattern", function() {
-    it("should not hit cache if it cannot find a pattern", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
-      return userCache.searchPattern({pattern: "1232all*", id: 1})
-        .then(function(res) {  
-          res.length.should.equal(0);        
-          return done();
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
+          done();
         })
-        .catch(function(err) {
-          return done(err);
+        .catch(function(_err) {
+          done(_err);
         });
     });
     
@@ -217,34 +363,32 @@ describe("Reading current user from cache or writing it to cache if not present"
       return userCache.searchPattern({pattern: "*", id: 1})
         .then(function(_users) {  
           should.exist(_users);
-          done();
-        })
-        .catch(function(err) {
-          return done(err);
-        });
-    });
-  });
-  
-  
-  describe("#expireOne", function() {
-    it("Should expire one particular key", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
-      return userCache.expireOne({id: 1})
-        .then(function(_status) {  
-          _status.should.be.true
-          done();
+          return done();
         })
         .catch(function(err) {
           return done(err);
         });
     });
     
-    it("Should not expire anything if key doesn't match", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
-      return userCache.expireOne({id: 'SomethingRandomAndWeird'})
-        .then(function(_status) {  
-          _status.should.be.false
+  });
+  
+  
+  describe("#search should not hit cache when not present", function() {
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
           done();
+        })
+        .catch(function(_err) {
+          done(_err);
+        });
+    });
+    
+    it("Should not fetch currentUser when searched only with id - {id: id}", function(done) {
+      return userCache.search({id: currentUser.id})
+        .then(function(_cachedUser) {
+          should(_cachedUser).not.exist;
+          return done();
         })
         .catch(function(err) {
           return done(err);
@@ -252,7 +396,149 @@ describe("Reading current user from cache or writing it to cache if not present"
     });
   });
   
-  describe("#expirePattern", function() {
+  describe("#expire", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: currentUser.id}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: 2}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: 3}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: 2, action: 'all'}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: 2, action: 'all'}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: currentUser.id, action: 'connections'}).return(_user);
+        })
+        .then(function(_user) {
+          userCache.setCache([_user], {id: currentUser.id, action: 'all'});
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    });
+    
+    it("Should expire a single key with - {id: id} format", function(done) {
+      return userCache.expire({id: currentUser.id})
+        .then(function(_status) {
+          _status.should.containEql(1);
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+    
+    it("Should expire a single key with - {id: id, action: action} format", function(done) {
+      return userCache.expire({id: currentUser.id, action: 'all'})
+        .then(function(_status) {
+          _status.should.containEql(1);
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+    
+    it("Should expire all keys for that user - {id: id, all: true} format", function(done) {
+      return userCache.expire({id: currentUser.id, all: true})
+        .then(function(_status) {
+          _status.should.containEql(1);
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+    
+    it("Should expire all keys for that user - {id: id, all: true} format", function(done) {
+      return userCache.expire({expire_all: true})
+        .then(function(_status) {
+        _status.should.containEql(1);
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+  });
+  
+  describe("Legacy - #expireOne", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          userCache.setCache(_user, {id: currentUser.id}).return(_user);
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    });
+    
+    it("Should expire one cache with #expireOne - {id: id}", function(done) {
+      var userCache = cacheStore(User, {ttl: 300})
+        return userCache.expireOne({id: currentUser.id})
+          .then(function(_status) {
+            _status.should.be.true;
+            return done();
+          })
+          .catch(function(err) {
+            return done(err);
+          });
+    });
+  })
+  
+  describe("Legace - #expirePattern", function() {
+    before(function(done) {
+      userCache = cacheStore(db.models.User, {ttl: 800});
+      return User.findById(currentUser.id)
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: currentUser.id}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: 2}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache(_user, {id: 3}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: 2, action: 'all'}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: 2, action: 'all'}).return(_user);
+        })
+        .then(function(_user) {
+          return userCache.setCache([_user], {id: currentUser.id, action: 'connections'}).return(_user);
+        })
+        .then(function(_user) {
+          userCache.setCache([_user], {id: currentUser.id, action: 'all'});
+          return done();
+        })
+        .catch(function(_err) {
+          return done(_err);
+        });
+    });
+    
+    after(function(done) {
+      userCache.expire({expire_all: true})
+        .then(function(_status) {
+          done();
+        })
+        .catch(function(_err) {
+          done(_err);
+        });
+    });
+    
     it("Should expire all keys matching the pattern", function(done) {
       var userCache = cacheStore(User, {ttl: 300})
       return userCache.expirePattern({pattern: "all*", id: 1})
@@ -263,10 +549,7 @@ describe("Reading current user from cache or writing it to cache if not present"
         })
         .catch(function(err) {
           done(err);
-        })
-    })
-  })
-  
-  
-  
+        });
+    });  
+  });
 });
