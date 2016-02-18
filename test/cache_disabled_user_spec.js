@@ -21,7 +21,7 @@ opts.password = process.env.DB_PASS;
 opts.dialect = process.env.DB_DIALECT || 'postgres';
 opts.logging = process.env.DB_LOG ? console.log : false;
 
-describe("Caching", function() {
+describe("Caching Disabled: ", function() {
   var User;
   var currentUser;
   
@@ -78,8 +78,8 @@ describe("Caching", function() {
    * Destroys all users and expires all caches
    */
   after(function(done) {
-    var userCache = cacheStore(db.models.User, {ttl: 50000});
-    
+    var userCache = cacheStore(db.models.User, {ttl: 50000, enabled: false});
+    debugger;
     function expireAllCache() {
       return new Promise(function promisify(resolve, reject) {
         return userCache.expire({expire_all: true})
@@ -113,8 +113,8 @@ describe("Caching", function() {
   describe("#setCache", function() {
 
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
-      return done()
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
+      return done();
     });
     
     after(function(done) {
@@ -141,7 +141,7 @@ describe("Caching", function() {
         })
     })
 
-    it("Should be able to set cache with just id ", function(done) {
+    it("Should not set cache with just id ", function(done) {
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: _user.id}).return(_user);
@@ -150,10 +150,7 @@ describe("Caching", function() {
           return userCache.search({id: _user.id});
         })
         .then(function(_cachedUser) {
-          _cachedUser.should.exist;
-          _cachedUser.id.should.exist;
-          _cachedUser.name.should.exist;
-          _cachedUser.name.should.equal("TestUser");
+          should(_cachedUser).be.null;
           return done();
         })
         .catch(function(_err) {
@@ -161,8 +158,8 @@ describe("Caching", function() {
         });
     })
     
-    it("Should be able to set cache with id and action", function(done) {
-       return User.findAll({})
+    it("Should not be able to set cache with id and action", function(done) {
+      return User.findAll({})
         .then(function(_users) {
           return userCache.setCache([_users], {id: currentUser.id, action: 'all'});
         })
@@ -170,8 +167,7 @@ describe("Caching", function() {
           return userCache.search({id: currentUser.id, action: 'all'});
         })
         .then(function(_cachedUsers) {
-          _cachedUsers.should.exist;
-          _cachedUsers.should.be.instanceof(Array);
+          _cachedUsers.should.be.empty;
           return done()
         })
         .catch(function(_err) {
@@ -180,9 +176,9 @@ describe("Caching", function() {
     });
     
     it("Should not set cache if there is no id", function(done) {
-       return User.findAll({})
+      return User.findAll({})
         .then(function(_users) {
-          userCache.setCache.should.throw(Error, {message: "Please provide id"});
+          userCache.setCache.should.throw(Error);
           return done()
         })
         .catch(function(_err) {
@@ -193,7 +189,7 @@ describe("Caching", function() {
   
   describe("#search with cached data", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -217,10 +213,10 @@ describe("Caching", function() {
         });
     });
     
-    it("Should fetch currentUser when searched only with id - {id: id}", function(done) {
+    it("Should not fetch currentUser when searched only with id - {id: id}", function(done) {
       return userCache.search({id: currentUser.id})
         .then(function(_cachedUser) {
-          _cachedUser.should.exist;
+          should(_cachedUser).not.exist;
           return done();
         })
         .catch(function(err) {
@@ -228,11 +224,10 @@ describe("Caching", function() {
         });
     });
     
-    it("Should fetch currentUser when searched only with id and action - {id: id, action: 'action'}", function(done) {
+    it("Should not fetch currentUser when searched only with id and action - {id: id, action: 'action'}", function(done) {
       return userCache.search({id: currentUser.id, action: 'all'})
         .then(function(_cachedUsers) {
-          _cachedUsers.should.exist;
-          _cachedUsers.should.be.instanceof(Array);
+          _cachedUsers.should.be.empty;
           return done();
         })
         .catch(function(err) {
@@ -240,11 +235,10 @@ describe("Caching", function() {
         });
     });
     
-    it("Should fetch all cached users for a particular user", function(done) {
+    it("Should not fetch all cached users for a particular user", function(done) {
       return userCache.search({id: currentUser.id, all: true})
         .then(function(_cachedUsers) {
-          _cachedUsers.should.exist;
-          _cachedUsers.should.be.instanceof(Array);
+          _cachedUsers.should.be.empty;
           return done();
         })
         .catch(function(_err) {
@@ -255,7 +249,7 @@ describe("Caching", function() {
   
   describe("Legacy - #searchOne", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -276,11 +270,11 @@ describe("Caching", function() {
         });
     });
     
-    it("Should hit cache when data present with the cacheKey with searchOne", function(done) {
-      var userCache = cacheStore(User, {ttl: 300});
+    it("Should not hit cache when data present with the cacheKey with searchOne", function(done) {
+      var userCache = cacheStore(User, {ttl: 300, enabled: false});
       return userCache.searchOne({id: 1})
-        .then(function(res) {  
-          should.exist(res);        
+        .then(function(_cachedUser) {  
+          should(_cachedUser).not.exist;        
           return done();
         })
         .catch(function(err) {
@@ -292,7 +286,7 @@ describe("Caching", function() {
   
   describe("Legacy - #searchScoped", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -317,10 +311,10 @@ describe("Caching", function() {
     });
     
     it("should write to cache if key is not present and called with proper actions", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})         
+      var userCache = cacheStore(User, {ttl: 300, enabled: false})         
       return userCache.searchScoped({action: 'all', id: 1})
-        .then(function(_user) {
-          should.exist(_user);
+        .then(function(_cachedUser) {
+          should(_cachedUser).not.exist;
           return done();
         })
         .catch(function(err) {
@@ -331,7 +325,7 @@ describe("Caching", function() {
   
   describe("Legacy - #searchPattern", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -359,7 +353,7 @@ describe("Caching", function() {
     });
     
     it("Should hit cache when data present with the cacheKey with searchScoped", function(done) {
-      var userCache = cacheStore(User, {ttl: 300})
+      var userCache = cacheStore(User, {ttl: 300, enabled: false})
       return userCache.searchPattern({pattern: "*", id: 1})
         .then(function(_users) {  
           should.exist(_users);
@@ -398,7 +392,7 @@ describe("Caching", function() {
   
   describe("#expire", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -430,7 +424,7 @@ describe("Caching", function() {
     it("Should expire a single key with - {id: id} format", function(done) {
       return userCache.expire({id: currentUser.id})
         .then(function(_status) {
-          _status.should.containEql(1);
+          _status.should.be.empty;
           return done();
         })
         .catch(function(err) {
@@ -441,7 +435,7 @@ describe("Caching", function() {
     it("Should expire a single key with - {id: id, action: action} format", function(done) {
       return userCache.expire({id: currentUser.id, action: 'all'})
         .then(function(_status) {
-          _status.should.containEql(1);
+          _status.should.be.empty;
           return done();
         })
         .catch(function(err) {
@@ -452,7 +446,7 @@ describe("Caching", function() {
     it("Should expire all keys for that user - {id: id, all: true} format", function(done) {
       return userCache.expire({id: currentUser.id, all: true})
         .then(function(_status) {
-          _status.should.containEql(1);
+          _status.should.be.empty;
           return done();
         })
         .catch(function(err) {
@@ -463,7 +457,7 @@ describe("Caching", function() {
     it("Should expire all keys for that user - {id: id, all: true} format", function(done) {
       return userCache.expire({expire_all: true})
         .then(function(_status) {
-        _status.should.containEql(1);
+        _status.should.be.empty;
           return done();
         })
         .catch(function(err) {
@@ -474,7 +468,7 @@ describe("Caching", function() {
   
   describe("Legacy - #expireOne", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -489,7 +483,7 @@ describe("Caching", function() {
       var userCache = cacheStore(User, {ttl: 300})
         return userCache.expireOne({id: currentUser.id})
           .then(function(_status) {
-            _status.should.be.true;
+            _status.should.be.empty;
             return done();
           })
           .catch(function(err) {
@@ -500,7 +494,7 @@ describe("Caching", function() {
   
   describe("Legace - #expirePattern", function() {
     before(function(done) {
-      userCache = cacheStore(db.models.User, {ttl: 800});
+      userCache = cacheStore(db.models.User, {ttl: 800, enabled: false});
       return User.findById(currentUser.id)
         .then(function(_user) {
           return userCache.setCache(_user, {id: currentUser.id}).return(_user);
@@ -543,8 +537,7 @@ describe("Caching", function() {
       var userCache = cacheStore(User, {ttl: 300})
       return userCache.expirePattern({pattern: "all*", id: 1})
         .then(function(_status) {
-          _status.should.be.an.Array;
-          _status.should.containEql(1);     
+          _status.should.be.empty;     
           done()
         })
         .catch(function(err) {
@@ -552,4 +545,4 @@ describe("Caching", function() {
         });
     });  
   });
-});
+  })

@@ -4,7 +4,7 @@ var gulp = require('gulp'),
 
 
 gulp.task('test', function() {
-  return gulp.src('./test/**/*.test.js', {read: false})
+  return gulp.src('./test/**/*_spec.js', {read: false})
     .pipe(mocha())
         .once('error', function() {
             process.exit(1);
