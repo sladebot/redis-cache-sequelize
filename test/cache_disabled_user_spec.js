@@ -47,7 +47,7 @@ describe("Caching Disabled: ", function() {
           return {
             name: this.name
           }
-        }
+        }.bind(this)
       }
     });
     
